@@ -65,3 +65,7 @@ Instead of failing on the first invalid invoice line, collect and return all val
 ### Configurable Rounding
 
 Allow rounding behavior to be configured per vendor in case different vendors require different rounding rules.
+
+### Demo
+I created a little demo and implemented it on a laravel project: 
+[https://ancon-vendor-app-production.up.railway.app/fee-calculator](https://ancon-vendor-app-production.up.railway.app/fee-calculator)
