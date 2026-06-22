@@ -427,6 +427,43 @@ class FeeCalculatorServiceTest extends TestCase
         $this->assertEquals('1099999.99', $result['manifests']['M001']['manifest_total']);
     }
 
+    public function test_sample_invoice_with_default_vendor_config(): void
+    {
+        $lines = [
+            ['line_number' => 1, 'manifest_number' => '027425604JJK', 'description' => 'Disposal',   'amount' => 500.00],
+            ['line_number' => 2, 'manifest_number' => '027425604JJK', 'description' => 'Treatment',  'amount' => 75.00],
+            ['line_number' => 3, 'manifest_number' => '027425604JJK', 'description' => 'Transport',  'amount' => 175.00],
+            ['line_number' => 4, 'manifest_number' => '027425604JJK', 'description' => 'Lab Work',   'amount' => 210.00],
+            ['line_number' => 5, 'manifest_number' => '027425611JJK', 'description' => 'Disposal',   'amount' => 320.00],
+        ];
+
+        // Use the vendor defaults: $25 manifest fee, 8.7% surcharge on (base + fee).
+        $result = $this->service->calculate($lines);
+
+        $this->assertCount(2, $result['manifests']);
+
+        // Manifest 027425604JJK: 500 + 75 + 175 + 210 = 960 base.
+        $first = $result['manifests']['027425604JJK'];
+        $this->assertEquals('960.00', $first['base_total']);
+        $this->assertEquals('25.00', $first['manifest_fee']);
+        $this->assertEquals('985.00', $first['subtotal']);
+        // 8.7% of 985.00 = 85.695 -> 85.70 (half away from zero).
+        $this->assertEquals('85.70', $first['surcharge']);
+        $this->assertEquals('1070.70', $first['manifest_total']);
+
+        // Manifest 027425611JJK: 320 base.
+        $second = $result['manifests']['027425611JJK'];
+        $this->assertEquals('320.00', $second['base_total']);
+        $this->assertEquals('25.00', $second['manifest_fee']);
+        $this->assertEquals('345.00', $second['subtotal']);
+        // 8.7% of 345.00 = 30.015 -> 30.02 (half away from zero).
+        $this->assertEquals('30.02', $second['surcharge']);
+        $this->assertEquals('375.02', $second['manifest_total']);
+
+        // 1070.70 + 375.02 = 1445.72.
+        $this->assertEquals('1445.72', $result['invoice_total']);
+    }
+
     public function test_manifest_order_preservation_with_duplicates(): void
     {
         $lines = [
